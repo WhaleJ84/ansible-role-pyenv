@@ -6,6 +6,11 @@
       repo: 'https://github.com/pyenv/pyenv.git'
       dest: "{{ pyenv_repo_dir }}/pyenv"
 
+  - name: INSTALL | Clone pyenv-virtualenv repository
+    ansible.builtin.git:
+      repo: 'https://github.com/pyenv/pyenv-virtualenv.git'
+      dest: "{{ pyenv_repo_dir }}/pyenv/plugins/pyenv-virtualenv"
+
   - name: INSTALL | Install build environment dependencies
     ansible.builtin.apt:
       pkg:
@@ -41,7 +46,7 @@
         state: touch
         owner: "{{ ansible_env.USER }}"
         group: "{{ ansible_env.USER }}"
-      changed_when: False
+      changed_when: false
     - name: CONFIGURE | ensure PYENV_ROOT is exported
       ansible.builtin.lineinfile:
         path: "{{ ansible_env.HOME }}/.config/environment.d/50-pyenv.conf"
@@ -53,7 +58,7 @@
         state: touch
         owner: "{{ ansible_env.USER }}"
         group: "{{ ansible_env.USER }}"
-      changed_when: False
+      changed_when: false
     - name: CONFIURE | ensure environment variables get sourced
       ansible.builtin.lineinfile:
         path: "{{ ansible_env.HOME }}/.profile"
@@ -69,6 +74,9 @@
         path: "{{ ansible_env.HOME }}/.profile"
         regexp: 'pyenv init -'
         line: 'eval "$(pyenv init -)"'
-
+    - name: CONFIGURE | ensure pyenv-virtualenv is enabled in shell
+      ansible.builtin.lineinfile:
+        path: "{{ ansible_env.HOME }}/.profile"
+        regexp: 'pyenv virtualenv-init -'
+        line: 'eval "$(pyenv virtualenv-init -)"'
   tags: configure
-
