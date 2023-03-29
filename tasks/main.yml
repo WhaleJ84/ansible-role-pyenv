@@ -54,6 +54,11 @@
         owner: "{{ ansible_env.USER }}"
         group: "{{ ansible_env.USER }}"
       changed_when: False
+    - name: CONFIURE | ensure environment variables get sourced
+      ansible.builtin.lineinfile:
+        path: "{{ ansible_env.HOME }}/.profile"
+        regexp: 'environment.d'
+        line: '[ -d "$HOME/.config/environment.d" ] && for file in $HOME/.config/environment.d/*; do source "$file"; export $(cut -d= -f1 $file); done'
     - name: CONFIGURE | ensure pyenv is in PATH
       ansible.builtin.lineinfile:
         path: "{{ ansible_env.HOME }}/.profile"
@@ -64,11 +69,6 @@
         path: "{{ ansible_env.HOME }}/.profile"
         regexp: 'pyenv init -'
         line: 'eval "$(pyenv init -)"'
-    - name: CONFIURE | ensure environment variables get sourced
-      ansible.builtin.lineinfile:
-        path: "{{ ansible_env.HOME }}/.profile"
-        regexp: 'environment.d'
-        line: '[ -d "$HOME/.config/environment.d" ] && for file in $HOME/.config/environment.d/*; do source "$file"; export $(cut -d= -f1 $file); done'
 
   tags: configure
 
