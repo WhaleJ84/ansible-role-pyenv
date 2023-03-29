@@ -1,0 +1,19 @@
+---
+- name: INSTALL | pyenv
+  block:
+  - name: INSTALL | Clone pyenv repository
+    ansible.builtin.git:
+      repo: 'https://github.com/pyenv/pyenv.git'
+      dest: "{{ pyenv_repo_dir }}/pyenv"
+
+  - name: INSTALL | Configure Makefile
+    ansible.builtin.command:
+      cmd: "{{ pyenv_repo_dir }}/pyenv/src/configure"
+      creates: "{{ pyenv_repo_dir }}/pyenv/src/Makefile"
+
+
+  - name: INSTALL | Install pyenv
+    community.general.make:
+      chdir: "{{ pyenv_repo_dir }}/pyenv/src"
+      file: "{{ pyenv_repo_dir }}/pyenv/Makefile"
+  tags: install
