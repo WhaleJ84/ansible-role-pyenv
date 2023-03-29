@@ -6,14 +6,58 @@
       repo: 'https://github.com/pyenv/pyenv.git'
       dest: "{{ pyenv_repo_dir }}/pyenv"
 
-  - name: INSTALL | Configure Makefile
-    ansible.builtin.command:
-      cmd: "{{ pyenv_repo_dir }}/pyenv/src/configure"
-      creates: "{{ pyenv_repo_dir }}/pyenv/src/Makefile"
-
-
-  - name: INSTALL | Install pyenv
-    community.general.make:
-      chdir: "{{ pyenv_repo_dir }}/pyenv/src"
-      file: "{{ pyenv_repo_dir }}/pyenv/Makefile"
+  - name: INSTALL | Install build environment dependencies
+    ansible.builtin.apt:
+      pkg:
+        - build-essential
+        - libssl-dev
+        - zlib1g-dev
+        - libbz2-dev
+        - libreadline-dev
+        - libsqlite3-dev
+        - curl
+        - libncursesw5-dev
+        - xz-utils
+        - tk-dev
+        - libxml2-dev
+        - libxmlsec1-dev
+        - libffi-dev
+        - liblzma-dev
+      state: present
+    become: true
   tags: install
+
+- name: CONFIGURE | pyenv
+  block:
+    - name: CONFIGURE | ensure environment file exists
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.config/environment.d/50-pyenv.conf"
+        state: touch
+        owner: "{{ ansible_env.USER }}"
+        group: "{{ ansible_env.USER }}"
+      changed_when: False
+    - name: CONFIGURE | ensure PYENV_ROOT is exported
+      ansible.builtin.lineinfile:
+        path: "{{ ansible_env.HOME }}/.config/environment.d/50-pyenv.conf"
+        regexp: "^PYENV_ROOT"
+        line: "PYENV_ROOT={{ pyenv_repo_dir }}/pyenv"
+    - name: CONFIGURE | ensure profile file exists
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.profile"
+        state: touch
+        owner: "{{ ansible_env.USER }}"
+        group: "{{ ansible_env.USER }}"
+      changed_when: False
+    - name: CONFIGURE | ensure pyenv is in PATH
+      ansible.builtin.lineinfile:
+        path: "{{ ansible_env.HOME }}/.profile"
+        regexp: '$PYENV_ROOT/bin'
+        line: '[ -d "$PYENV_ROOT/bin" ] && case :$PATH: in *:$PYENV_ROOT/bin:*) ;; *) PATH=$PYENV_ROOT/bin:$PATH ;; esac'
+    - name: CONFIGURE | ensure pyenv is enabled in shell
+      ansible.builtin.lineinfile:
+        path: "{{ ansible_env.HOME }}/.profile"
+        regexp: 'pyenv init -'
+        line: 'eval "$(pyenv init -)"'
+
+  tags: configure
+
